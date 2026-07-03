@@ -210,8 +210,12 @@ SUPABASE_PROJECT_REF=avursvhmilcsssabqtkx
 
 ## 2단계 — .env 채우기
 
-브라우저 에이전트가 출력한 값들을 저장소 루트 `.env`에 붙여넣는다.
-스키마 전체는 [`.env.example`](.env.example) 참고.
+브라우저 에이전트가 출력한 값들을 `.env`에 붙여넣는다. 스키마 전체는
+[`.env.example`](.env.example) 참고.
+
+> **위치**: `LION_*` 키는 `packages/lion_auth/.env`(이 폴더) 또는 저장소 루트
+> `.env` 어느 쪽에 넣어도 된다 — setup/run 스크립트가 두 파일을 병합해서 읽고
+> 패키지 쪽 값을 우선한다. 두 파일 모두 gitignore 되어 커밋되지 않는다.
 
 ---
 
