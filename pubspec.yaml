@@ -3,7 +3,7 @@ description: >-
   라이온앤더랩 공용 한국 특화 소셜 로그인 모듈.
   자격 획득 코어(Google/Kakao/Naver/Apple, 웹+앱)는 백엔드 비종속이며,
   세션 발급은 AuthBackend 어댑터(Supabase / 자체 HTTP 서버)로 분리된다.
-version: 0.1.0
+version: 0.1.1
 publish_to: none
 
 environment:
@@ -24,6 +24,11 @@ dependencies:
   # 백엔드 어댑터
   supabase_flutter: ^2.12.0
   http: ^1.2.0
+
+  # 푸시(FCM) — 메시징 서브모듈. 서버 발송은 Edge Function 이 담당하므로
+  # 클라이언트는 토큰 획득/수신만 사용한다. Solapi 클라이언트 SDK 는 없다(서버 전용).
+  firebase_core: ^4.1.0
+  firebase_messaging: ^16.0.0
 
   # 유틸
   crypto: ^3.0.3

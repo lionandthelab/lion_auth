@@ -199,4 +199,30 @@ void main() {
       LionAuthProviderId.apple,
     ]);
   });
+
+  test('빈/공백 키의 프로바이더는 노출하지 않는다 (동작 불가 버튼 차단)', () {
+    // 옵션은 주입됐지만 콘솔 키가 비어 있는 경우 — 버튼을 노출하면 눌러도
+    // 실패하므로, enabledProviders에서 제외되어야 한다.
+    const blank = LionAuthConfig(
+      appName: 'x',
+      google: GoogleAuthOptions(webClientId: '   '),
+      kakao: KakaoAuthOptions(nativeAppKey: '', javaScriptAppKey: ''),
+      naver: NaverAuthOptions(clientId: ''),
+      apple: AppleAuthOptions(),
+      appleOnlyOnIos: false, // 플랫폼 게이트 배제하고 키 게이트만 검증
+    );
+    expect(
+      blank.enabledProviders,
+      [LionAuthProviderId.apple], // 키가 필요 없는 Apple만 남는다
+    );
+
+    const noneUsable = LionAuthConfig(
+      appName: 'x',
+      google: GoogleAuthOptions(webClientId: ''),
+      kakao: KakaoAuthOptions(nativeAppKey: '', javaScriptAppKey: ''),
+      naver: NaverAuthOptions(clientId: ''),
+    );
+    expect(noneUsable.enabledProviders, isEmpty);
+    expect(noneUsable.hasUsableSocialProvider, isFalse);
+  });
 }
