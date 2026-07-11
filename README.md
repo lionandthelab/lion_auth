@@ -47,8 +47,8 @@ git submodule update --remote packages/lion_auth   # 최신 main으로 이동
 git add packages/lion_auth && git commit            # 호스트에 SHA 고정 커밋
 ```
 
-> 이 레포는 private이므로 CI에서 서브모듈을 클론하려면 read-only 배포 키(또는 PAT)가 필요하다.
-> GitHub Actions 예시는 아래 [CI 체크아웃](#ci-체크아웃) 참고.
+> 이 레포는 public이므로 CI에서 `submodules: recursive`만 지정하면 클론된다.
+> private로 되돌리는 경우의 GitHub Actions 예시는 아래 [CI 체크아웃](#ci-체크아웃) 참고.
 
 ## 최소 사용 예 (Supabase)
 
@@ -90,6 +90,7 @@ Naver는 Supabase가 기본 지원하지 않으므로 `server/supabase/functions
 
 ## CI 체크아웃
 
+public 상태에서는 `submodules: recursive`만으로 충분하다. private로 운영하려면
 read-only 배포 키를 이 레포에 등록하고, 호스트 레포 시크릿(예: `LION_AUTH_DEPLOY_KEY`)에
 개인 키를 넣은 뒤:
 
