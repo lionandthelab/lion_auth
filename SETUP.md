@@ -206,6 +206,72 @@ SUPABASE_PROJECT_REF=avursvhmilcsssabqtkx
 > Apple 로그인은 iOS 스토어 제출 시점에 추가한다 (Apple Developer 콘솔 + Supabase Apple provider).
 > 이 모듈의 Apple 버튼은 iOS에서만 노출되므로 웹/Android 검증에는 필요 없다.
 
+### 1-E. Solapi (카카오 알림톡 + SMS) — 브라우저 에이전트 프롬프트
+
+```text
+Solapi(https://solapi.com)에 가입/로그인해서 다음 작업을 수행해줘.
+
+1. [발송준비 > 발신번호] 새 발신번호 등록 → 휴대폰/ARS 인증 완료
+   (알림톡 실패 시 SMS/LMS 자동 대체, 그리고 SMS 직접 발송에 쓰인다)
+
+2. [카카오채널] 카카오 비즈니스 채널 연동
+   - 카카오톡 채널이 없으면 카카오 비즈니스(https://business.kakao.com)에서 채널을 먼저 생성
+   - Solapi에서 채널 연동(연동 토큰 신청 → 카카오에서 받은 토큰 입력)
+   - 연동 완료 후 발신프로필 ID(PF...로 시작)를 확인
+
+3. [알림톡 > 템플릿] 최소 1개 템플릿 등록 후 검수 요청
+   - 본문의 치환 변수는 #{변수명} 형식 사용 (예: #{이름}님, 안녕하세요)
+   - 카카오 검수 승인 후 템플릿 코드(KA...로 시작)가 발급됨
+
+4. [설정 > API Key] API Key/Secret 발급 후 결과를 아래 형식으로 출력:
+
+SOLAPI_API_KEY=<API Key>
+SOLAPI_API_SECRET=<API Secret>
+SOLAPI_SENDER=<등록한 발신번호, 숫자만 예: 0212345678>
+SOLAPI_PFID=<발신프로필 ID(PF...)>
+```
+
+> **알림톡 템플릿 승인은 카카오 검수 게이트다**(영업일 소요). 승인 전에도
+> `SOLAPI_SENDER`만 있으면 `channel:"sms"` 직접 발송과 `channel:"auto"`의 SMS
+> 대체 발송으로 파이프라인을 검증할 수 있다. 실제 알림톡 전달은 템플릿 승인 후 가능.
+
+### 1-F. Firebase / FCM (푸시) — 브라우저 에이전트 프롬프트
+
+```text
+Firebase 콘솔(https://console.firebase.google.com)에서 다음 작업을 수행해줘.
+
+1. 프로젝트 생성(또는 기존 재사용): 이름 "nest-lionandthelab"
+
+2. 앱 3개 등록:
+   - Android: 패키지 com.lionandthelab.nest → google-services.json 다운로드
+     (frontend/android/app/ 에 배치)
+   - iOS: 번들 ID com.lionandthelab.nest → GoogleService-Info.plist 다운로드
+     (frontend/ios/Runner/ 에 배치, Xcode Runner 타깃에 추가)
+   - 웹 앱 등록 → firebaseConfig(apiKey/appId/messagingSenderId 등) 확보
+
+3. [프로젝트 설정 > Cloud Messaging]
+   - iOS: APNs 인증 키(.p8) 업로드 (Apple Developer > Keys 에서 발급)
+   - 웹 푸시 인증서(Web Push certificates)에서 키 쌍 생성 → 공개 VAPID 키 확보
+
+4. [프로젝트 설정 > 서비스 계정] 새 비공개 키 생성 → 서비스계정 JSON 다운로드
+   (이 JSON은 서버 시크릿 — 절대 클라이언트/깃에 넣지 말 것)
+
+5. 결과를 아래 형식으로 출력:
+
+FCM_PROJECT_ID=<Firebase 프로젝트 ID>
+LION_FCM_WEB_VAPID_KEY=<웹 푸시 공개 VAPID 키>
+```
+
+> **호스트 자산(모듈이 대신 넣어줄 수 없는 파일):**
+> `google-services.json`, `GoogleService-Info.plist`, 그리고 웹의
+> `frontend/web/firebase-messaging-sw.js`(앱 senderId 포함 서비스워커). 셋업
+> 스크립트가 자동 패치하지 않으므로 위 안내대로 직접 배치한다. 또한 호스트 앱에서
+> `flutterfire configure`를 실행해 `firebase_options.dart`를 생성하고, `main()`에서
+> `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)`를 부른다.
+>
+> `FCM_SERVICE_ACCOUNT`는 다운로드한 서비스계정 JSON을 **한 줄**로 넣거나
+> base64로 인코딩해 넣는다(둘 다 지원). `.env`는 gitignore 되어 커밋되지 않는다.
+
 ---
 
 ## 2단계 — .env 채우기
@@ -229,6 +295,12 @@ node scripts/lion_auth_setup.mjs supabase # Management API로 Google/Kakao provi
 node scripts/lion_auth_setup.mjs android  # AndroidManifest.xml에 Kakao 스킴/Naver meta-data 주입
 node scripts/lion_auth_setup.mjs ios      # Info.plist에 URL 스킴/Nid* 키 주입
 node scripts/lion_auth_setup.mjs broker   # social-broker Edge Function 배포 (supabase CLI)
+
+# --- 메시징(알림톡·푸시) ---
+node scripts/lion_auth_setup.mjs messaging          # 아래 3개 + doctor
+node scripts/lion_auth_setup.mjs migrate-messaging  # push_tokens/notification_log/notification_prefs 마이그레이션
+node scripts/lion_auth_setup.mjs messaging-secrets  # Solapi/FCM 시크릿 주입 (Management API)
+node scripts/lion_auth_setup.mjs notify             # lion-notify Edge Function 배포 (JWT 검증 ON)
 ```
 
 Supabase 설정은 Management API(`PATCH /v1/projects/{ref}/config/auth`)로 처리되므로
@@ -261,6 +333,53 @@ node scripts/run_auth_lab.mjs --build
 - [ ] Android 에뮬레이터: Google 네이티브 시트 / 카카오 계정 로그인 / 네이버 로그인
 - [ ] 기존 이메일 가입 계정과 같은 이메일의 소셜 로그인 → 같은 userId로 연결되는지
 - [ ] 소셜 첫 로그인 계정에 real_name 없음 확인 (→ 전환 시 프로필 보완 스텝 필요)
+
+---
+
+## 5단계 — 메시징(알림톡·푸시) 독립 검증
+
+> **철칙(로그인과 동일): messaging-lab에서 검증되기 전에는 실제 앱의 알림 트리거에
+> 연결하지 않는다.** 아래 랩은 기존 로그인/앱 동작을 전혀 건드리지 않는 독립 타깃이다.
+
+```powershell
+# 웹 (Chrome) — 알림 권한 팝업 허용 필요
+node scripts/run_messaging_lab.mjs
+
+# Android 에뮬레이터 (Google Play 탑재 이미지 권장 — FCM 수신 가능)
+node scripts/run_messaging_lab.mjs -d emulator-5554
+
+# 헤드리스 스모크 (푸시 토큰 등록/DB행/함수 accept 확인)
+node scripts/messaging_lab_smoke.mjs
+```
+
+콘솔 승인 없이 검증 가능:
+
+- [ ] 웹/에뮬: 로그인 → "권한 요청" → "토큰 등록" → `push_tokens` 행 생성
+- [ ] "나에게 테스트 푸시"(`channel:"push"`) → 포그라운드 메시지 수신 + `notification_log` 행
+- [ ] `SOLAPI_SENDER`만 있으면 `channel:"sms"` → 운영자 폰으로 실제 SMS 1건
+- [ ] 로그아웃 → `push_tokens.revoked_at` 세팅
+
+운영자 콘솔 승인 후에만(수동 최종 확인):
+
+- [ ] 실제 알림톡 전달 (승인 템플릿 + 발신번호 + 카카오 채널)
+- [ ] iOS 실기기 푸시 (APNs 키 + 기기)
+
+---
+
+## HttpLionMessagingBackend 서버 계약 (비-Supabase 서비스용)
+
+Supabase가 아닌 서비스는 아래 계약의 서버를 구현하고 `HttpLionMessagingBackend`를 쓴다.
+호출자 식별은 `Authorization: Bearer <token>`(로그인 세션)로 한다.
+
+| 엔드포인트 | 요청 | 성공 응답 |
+|---|---|---|
+| `POST /messaging/register-token` | `{token, platform, device_id?, app_version?}` | `{}` |
+| `POST /messaging/unregister-token` | `{token}` | `{}` |
+| `POST /messaging/send` | `{channel, to_user_ids, template_id?, variables?, title?, body?, data?}` | `{accepted, message_id?, fallback_used?}` |
+
+실패 응답은 공통으로 `{"error": "<한국어 메시지>"}`. 서버는 발송 시 Solapi API Key/Secret,
+FCM 서비스계정을 **자체 보관**하며 클라이언트에 노출하지 않는다(Supabase 어댑터의
+`lion-notify` Edge Function과 동일한 역할).
 
 ---
 
@@ -305,6 +424,12 @@ node scripts/run_auth_lab.mjs --build
 | Supabase Kakao id_token 거부 (audience) | Supabase Kakao provider의 Client ID에 REST API 키 외에 네이티브/JS 키 추가 필요 여부 확인 (doctor 출력 참고) |
 | Naver `이메일 제공에 동의해 주세요` | 네이버 콘솔 제공 정보에서 이메일을 필수로, 사용자 재동의 필요 |
 | 웹 Naver 복귀 후 아무 일 없음 | Callback URL이 현재 페이지 URL과 정확히 일치하는지 확인 (포트 포함) |
+| 웹 푸시 토큰이 null | `LION_FCM_WEB_VAPID_KEY` 미주입 또는 `web/firebase-messaging-sw.js` 서비스워커 누락 |
+| iOS 푸시 무음 | APNs 인증 키(.p8) Firebase 미업로드 / Xcode Push Notifications·Background Modes 미설정 (시뮬레이터는 원격 푸시 미지원) |
+| 알림톡 대신 SMS로 감 | 템플릿 미승인 또는 `templateId`·`#{변수}` 불일치 → `disableSms=false`라 SMS 대체된 것(정상 동작) |
+| Solapi `발신번호 미등록` | `SOLAPI_SENDER` 미인증 — 콘솔 발신번호 인증 완료 필요 |
+| lion-notify `401 로그인이 필요합니다` | 함수가 JWT 검증 ON으로 배포됨 — 로그인 세션의 Bearer 토큰으로 호출해야 함(정상) |
+| lion-notify `403 발송 권한 없음` | `authorizeSend` 기본 정책(본인만) — 브로드캐스트는 함수 복사본에서 역할 검사로 오버라이드 |
 
 ---
 

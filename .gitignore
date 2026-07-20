@@ -9,3 +9,8 @@ pubspec.lock
 # IDE
 .idea/
 *.iml
+
+# Secrets — .env.example만 추적한다. 실제 키가 든 .env는 절대 커밋 금지(공개 repo).
+.env
+.env.*
+!.env.example
