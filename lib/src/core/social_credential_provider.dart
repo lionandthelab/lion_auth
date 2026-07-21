@@ -9,6 +9,9 @@ abstract class SocialCredentialProvider {
   /// (예: 웹 Google은 GIS 버튼 이벤트로만 획득 → false)
   bool get canAcquireInteractively => true;
 
+  /// 웹에서 OAuth 리다이렉트 복귀가 URL에 감지되는지(로딩 표시용). 기본 false.
+  bool get hasPendingWebRedirect => false;
+
   /// SDK 초기화 등 선행 작업. 컨트롤러 initialize 시 1회 호출된다.
   Future<void> ensureInitialized() async {}
 

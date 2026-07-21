@@ -22,6 +22,7 @@ export 'src/backend/http_auth_backend.dart';
 export 'src/state/lion_auth_controller.dart';
 export 'src/ui/lion_auth_screen.dart';
 export 'src/ui/social_login_buttons.dart';
+export 'src/ui/lion_auth_busy_overlay.dart';
 
 // --- messaging 서브모듈 (알림톡 · 푸시) ---
 export 'src/messaging/config/lion_messaging_config.dart';

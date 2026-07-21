@@ -51,6 +51,12 @@ class LionAuthController extends ChangeNotifier {
   bool _isBusy = false;
   bool get isBusy => _isBusy;
 
+  bool _resuming = false;
+  bool get isResuming => _resuming;
+
+  /// 로딩 오버레이 표시 조건: 진행 중이거나 리다이렉트 복귀 처리 중.
+  bool get isProcessing => _isBusy || _resuming;
+
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -68,31 +74,40 @@ class LionAuthController extends ChangeNotifier {
     if (_initialized) return;
     _initialized = true;
 
-    for (final provider in _providers.values) {
-      try {
-        await provider.ensureInitialized();
-      } catch (error) {
-        debugPrint('[LionAuth] provider init failed: $error');
-      }
-    }
-
-    // 웹 Google: GIS 렌더 버튼 로그인 결과는 스트림으로 도착한다.
-    final google = _providers[LionAuthProviderId.google];
-    if (google is GoogleCredentialProvider && kIsWeb) {
-      _googleWebSubscription =
-          google.credentialStream.listen(_signInWithAcquiredCredential);
-    }
-
-    // Naver 웹 리다이렉트 복귀 등, 시작 시점에 회수할 자격 처리.
-    for (final provider in _providers.values) {
-      try {
-        final pending = await provider.resumePendingCredential();
-        if (pending != null) {
-          await _signInWithAcquiredCredential(pending);
-          break;
+    _resuming = _providers.values.any((p) => p.hasPendingWebRedirect);
+    if (_resuming) notifyListeners();
+    try {
+      for (final provider in _providers.values) {
+        try {
+          await provider.ensureInitialized();
+        } catch (error) {
+          debugPrint('[LionAuth] provider init failed: $error');
         }
-      } on SocialSignInException catch (e) {
-        _errorMessage = e.message;
+      }
+
+      // 웹 Google: GIS 렌더 버튼 로그인 결과는 스트림으로 도착한다.
+      final google = _providers[LionAuthProviderId.google];
+      if (google is GoogleCredentialProvider && kIsWeb) {
+        _googleWebSubscription =
+            google.credentialStream.listen(_signInWithAcquiredCredential);
+      }
+
+      // Naver 웹 리다이렉트 복귀 등, 시작 시점에 회수할 자격 처리.
+      for (final provider in _providers.values) {
+        try {
+          final pending = await provider.resumePendingCredential();
+          if (pending != null) {
+            await _signInWithAcquiredCredential(pending);
+            break;
+          }
+        } on SocialSignInException catch (e) {
+          _errorMessage = e.message;
+          notifyListeners();
+        }
+      }
+    } finally {
+      if (_resuming) {
+        _resuming = false;
         notifyListeners();
       }
     }

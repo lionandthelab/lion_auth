@@ -30,6 +30,15 @@ class NaverCredentialProvider extends SocialCredentialProvider {
   final NaverAuthOptions options;
 
   @override
+  bool get hasPendingWebRedirect {
+    if (!kIsWeb) return false;
+    final params = Uri.base.queryParameters;
+    final code = params['code'];
+    final state = params['state'];
+    return code != null && code.isNotEmpty && state != null && state.isNotEmpty;
+  }
+
+  @override
   Future<SocialCredential> acquire() async {
     if (kIsWeb) return _acquireWeb();
     return _acquireNative();
