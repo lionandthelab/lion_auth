@@ -117,15 +117,19 @@ Deno.serve(async (req) => {
     );
 
     // 3) 사용자 upsert (이메일 기준 — 기존 이메일 가입자는 같은 계정으로 연결)
+    //    네이버 별명 → 닉네임(full_name), 이름 → 실명(real_name), 프로필사진 → avatar.
     let isNewUser = false;
-    const displayName = profile.name ?? profile.nickname ?? "";
+    const nickname = (profile.nickname ?? "").trim();
+    const realName = (profile.name ?? "").trim();
+    const socialMeta: Record<string, unknown> = {
+      full_name: nickname || realName,
+      real_name: realName,
+      avatar_url: profile.profile_image ?? null,
+    };
     const { error: createError } = await admin.auth.admin.createUser({
       email,
       email_confirm: true,
-      user_metadata: {
-        full_name: displayName,
-        avatar_url: profile.profile_image ?? null,
-      },
+      user_metadata: socialMeta,
       app_metadata: {
         provider: "naver",
         providers: ["naver"],
@@ -145,6 +149,16 @@ Deno.serve(async (req) => {
     if (linkError || !linkData?.properties?.hashed_token) {
       console.error("[social-broker] generateLink failed:", linkError);
       return jsonResponse(500, { error: "로그인 토큰 발급에 실패했습니다." });
+    }
+
+    // 5) 기존 사용자도 매 로그인마다 최신 소셜 프로필(별명/이름/사진)로 갱신.
+    //    createUser는 email_exists면 메타데이터를 안 바꾸므로 여기서 병합 업데이트.
+    const existingUserId = (linkData as { user?: { id?: string; user_metadata?: Record<string, unknown> } }).user?.id;
+    if (existingUserId) {
+      const prevMeta = (linkData as { user?: { user_metadata?: Record<string, unknown> } }).user?.user_metadata ?? {};
+      await admin.auth.admin.updateUserById(existingUserId, {
+        user_metadata: { ...prevMeta, ...socialMeta },
+      });
     }
 
     return jsonResponse(200, {
