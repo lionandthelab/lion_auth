@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../config/lion_auth_config.dart';
 import '../core/social_credential.dart';
 import 'lion_auth_backend.dart';
 
@@ -77,6 +78,16 @@ class HttpLionAuthBackend implements LionAuthBackend {
   @override
   Future<void> sendPasswordReset(String email) async {
     await _post(resetPath, {'email': email});
+  }
+
+  @override
+  Future<void> signInWithOAuthRedirect(
+    LionAuthProviderId provider, {
+    String? redirectTo,
+  }) async {
+    throw const LionAuthBackendException(
+      '이 백엔드는 OAuth 리다이렉트를 지원하지 않습니다.',
+    );
   }
 
   @override

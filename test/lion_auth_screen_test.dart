@@ -55,6 +55,14 @@ class _FakeBackend implements LionAuthBackend {
   }
 
   @override
+  Future<void> signInWithOAuthRedirect(
+    LionAuthProviderId provider, {
+    String? redirectTo,
+  }) async {
+    calls.add('oauth:${provider.name}');
+  }
+
+  @override
   Future<void> signOut() async {
     calls.add('signOut');
   }

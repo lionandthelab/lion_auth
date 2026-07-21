@@ -162,6 +162,25 @@ class SupabaseLionAuthBackend implements LionAuthBackend {
   }
 
   @override
+  Future<void> signInWithOAuthRedirect(
+    LionAuthProviderId provider, {
+    String? redirectTo,
+  }) async {
+    final oauthProvider = switch (provider) {
+      LionAuthProviderId.google => OAuthProvider.google,
+      LionAuthProviderId.kakao => OAuthProvider.kakao,
+      LionAuthProviderId.apple => OAuthProvider.apple,
+      LionAuthProviderId.naver => throw const LionAuthBackendException(
+          'Naver는 OAuth 리다이렉트를 지원하지 않습니다.'),
+    };
+    try {
+      await client.auth.signInWithOAuth(oauthProvider, redirectTo: redirectTo);
+    } on AuthException catch (e) {
+      throw LionAuthBackendException(_koreanAuthMessage(e), e);
+    }
+  }
+
+  @override
   Future<void> signOut() => client.auth.signOut();
 
   String _requireIdToken(SocialCredential credential) {

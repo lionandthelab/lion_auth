@@ -1,3 +1,4 @@
+import '../config/lion_auth_config.dart';
 import '../core/social_credential.dart';
 
 /// 로그인 완료 후 백엔드가 돌려주는 세션 요약.
@@ -62,6 +63,13 @@ abstract class LionAuthBackend {
   });
 
   Future<void> sendPasswordReset(String email);
+
+  /// 공급자 OAuth 리다이렉트 로그인 시작(웹 커스텀 버튼용). 페이지가 공급자로
+  /// 떠났다가 돌아오면 세션 발급자(예: Supabase)가 콜백을 처리한다.
+  Future<void> signInWithOAuthRedirect(
+    LionAuthProviderId provider, {
+    String? redirectTo,
+  });
 
   Future<void> signOut();
 }

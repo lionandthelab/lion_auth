@@ -12,10 +12,15 @@ class GoogleAuthOptions {
   const GoogleAuthOptions({
     required this.webClientId,
     this.iosClientId,
+    this.webUseRenderedButton = false,
   });
 
   final String webClientId;
   final String? iosClientId;
+
+  /// 웹에서 GIS 공식 렌더 버튼(FedCM id_token)을 쓸지 여부.
+  /// false(기본)면 커스텀 원형 버튼 + Supabase OAuth 리다이렉트를 사용한다.
+  final bool webUseRenderedButton;
 
   /// 실제 로그인이 가능한 설정인지 — webClientId가 비어 있지 않아야 한다.
   /// 콘솔 키 발급 전(빈 문자열/미설정)에는 버튼을 노출하지 않기 위한 게이트.

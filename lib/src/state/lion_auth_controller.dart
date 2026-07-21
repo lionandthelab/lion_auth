@@ -135,6 +135,21 @@ class LionAuthController extends ChangeNotifier {
     });
   }
 
+  /// 웹 OAuth 리다이렉트 로그인(커스텀 버튼). 성공 시 세션 발급자가 콜백을
+  /// 처리하므로 이 함수는 리다이렉트만 시작한다.
+  Future<void> signInWithOAuthRedirect(LionAuthProviderId id) async {
+    await _run(() async {
+      try {
+        await backend.signInWithOAuthRedirect(
+          id,
+          redirectTo: kIsWeb ? '${Uri.base.origin}/' : null,
+        );
+      } on LionAuthBackendException catch (e) {
+        _errorMessage = e.message;
+      }
+    });
+  }
+
   Future<void> signInWithPassword({
     required String email,
     required String password,

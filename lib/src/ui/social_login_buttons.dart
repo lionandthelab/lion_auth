@@ -28,10 +28,11 @@ class SocialLoginButtons extends StatelessWidget {
     final providers = controller.config.enabledProviders;
     if (providers.isEmpty) return const SizedBox.shrink();
 
-    final googleUsesWebButton =
-        kIsWeb && providers.contains(LionAuthProviderId.google);
+    final googleUsesWebButton = kIsWeb &&
+        providers.contains(LionAuthProviderId.google) &&
+        (controller.config.google?.webUseRenderedButton ?? false);
     final iconProviders = providers
-        .where((id) => !(kIsWeb && id == LionAuthProviderId.google))
+        .where((id) => !(googleUsesWebButton && id == LionAuthProviderId.google))
         .toList();
 
     return Column(
@@ -48,7 +49,14 @@ class SocialLoginButtons extends StatelessWidget {
                     provider: id,
                     onTap: controller.isBusy
                         ? null
-                        : () => controller.signInWithSocial(id),
+                        : () {
+                            if (kIsWeb &&
+                                id == LionAuthProviderId.google) {
+                              controller.signInWithOAuthRedirect(id);
+                            } else {
+                              controller.signInWithSocial(id);
+                            }
+                          },
                   ),
                 ),
             ],
