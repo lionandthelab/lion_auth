@@ -14,3 +14,6 @@ pubspec.lock
 .env
 .env.*
 !.env.example
+
+# 로컬 시크릿 (콘솔 발급 키) — 절대 커밋 금지
+.env
