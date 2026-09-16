@@ -158,6 +158,42 @@ void _controllerWiring() {
     expect(backend.credentials, isEmpty);
   });
 
+  test('모바일 복귀 주소는 앱 딥링크다', () async {
+    // redirectTo 를 비우면 GoTrue 는 site_url 로 돌려보낸다. 그건 보통
+    // 마케팅 도메인이라 앱은 세션을 영영 받지 못하고, 사용자는 브라우저에
+    // 남는다. 앱이 돌아올 자리를 명시한다.
+    final backend = _RecordingBackend();
+    final controller = LionAuthController(
+      config: const LionAuthConfig(
+        appName: 't',
+        mobileRedirectUri: 'fathom://login-callback/',
+        kakao: KakaoAuthOptions(flow: KakaoAuthFlow.oauthRedirect),
+      ),
+      backend: backend,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.signInWithSocial(LionAuthProviderId.kakao);
+
+    // 테스트는 웹이 아니므로 모바일 분기를 탄다.
+    expect(backend.redirects.single, 'kakao:fathom://login-callback/');
+  });
+
+  test('딥링크를 안 주면 비워서 보낸다 — 기존 동작', () async {
+    final backend = _RecordingBackend();
+    final controller = LionAuthController(
+      config: const LionAuthConfig(
+        appName: 't',
+        kakao: KakaoAuthOptions(flow: KakaoAuthFlow.oauthRedirect),
+      ),
+      backend: backend,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.signInWithSocial(LionAuthProviderId.kakao);
+    expect(backend.redirects.single, 'kakao:-');
+  });
+
   test('기본(idToken) 설정에서는 리다이렉트를 쓰지 않는다', () async {
     final backend = _RecordingBackend();
     final controller = LionAuthController(
