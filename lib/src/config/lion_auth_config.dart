@@ -138,6 +138,7 @@ class LionAuthConfig {
     this.enableEmailPassword = true,
     this.extraSignUpFields = const [],
     this.appleOnlyOnIos = true,
+    this.mobileRedirectUri,
   });
 
   final String appName;
@@ -156,6 +157,14 @@ class LionAuthConfig {
 
   /// true면 Apple 버튼을 iOS(및 macOS)에서만 노출한다.
   final bool appleOnlyOnIos;
+
+  /// 앱(비-웹)에서 OAuth 리다이렉트가 **돌아올 주소** — 커스텀 스킴 딥링크.
+  ///
+  /// 비워 두면 GoTrue가 `site_url`로 돌려보낸다. 그건 보통 마케팅 도메인이라
+  /// 앱은 세션을 받지 못하고 사용자는 브라우저에 남는다. 앱을 배포한다면
+  /// `myapp://login-callback/` 같은 값을 주고, Supabase Redirect URLs에도
+  /// 같은 값을 등록한다.
+  final String? mobileRedirectUri;
 
   /// 웹 OAuth 리다이렉트가 **돌아올 주소**.
   ///

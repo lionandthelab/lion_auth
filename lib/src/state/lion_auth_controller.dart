@@ -150,9 +150,12 @@ class LionAuthController extends ChangeNotifier {
       try {
         await backend.signInWithOAuthRedirect(
           id,
-          // origin 만 쓰면 하위 경로 배포(`/fathom/`)에서 앱이 없는 자리로
+          // 웹: origin 만 쓰면 하위 경로 배포(`/fathom/`)에서 앱이 없는 자리로
           // 돌아온다. 배포 경로를 살린 복귀 주소를 쓴다.
-          redirectTo: kIsWeb ? LionAuthConfig.webReturnUrl(Uri.base) : null,
+          // 앱: 비워 두면 GoTrue 가 site_url 로 보내서 세션이 앱에 안 온다.
+          redirectTo: kIsWeb
+              ? LionAuthConfig.webReturnUrl(Uri.base)
+              : config.mobileRedirectUri,
         );
       } on LionAuthBackendException catch (e) {
         _errorMessage = e.message;
