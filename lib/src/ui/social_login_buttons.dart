@@ -18,10 +18,14 @@ class SocialLoginButtons extends StatelessWidget {
     super.key,
     required this.controller,
     this.theme = const LionAuthTheme(),
+    this.onSelect,
   });
 
   final LionAuthController controller;
   final LionAuthTheme theme;
+
+  /// 있으면 기본 탭 동작 대신 호출한다. (호스트 앱의 브라우저 OAuth 등)
+  final Future<void> Function(LionAuthProviderId id)? onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +54,11 @@ class SocialLoginButtons extends StatelessWidget {
                     onTap: controller.isBusy
                         ? null
                         : () {
+                            final custom = onSelect;
+                            if (custom != null) {
+                              custom(id);
+                              return;
+                            }
                             if (kIsWeb &&
                                 id == LionAuthProviderId.google) {
                               controller.signInWithOAuthRedirect(id);
