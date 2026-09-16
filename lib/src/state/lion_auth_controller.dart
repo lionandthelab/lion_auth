@@ -26,7 +26,7 @@ class LionAuthController extends ChangeNotifier {
       _providers[LionAuthProviderId.google] = GoogleCredentialProvider(google);
     }
     final kakao = config.kakao;
-    if (kakao != null) {
+    if (kakao != null && kakao.flow == KakaoAuthFlow.idToken) {
       _providers[LionAuthProviderId.kakao] = KakaoCredentialProvider(kakao);
     }
     final naver = config.naver;
@@ -115,6 +115,14 @@ class LionAuthController extends ChangeNotifier {
 
   /// 소셜 버튼 탭 진입점.
   Future<void> signInWithSocial(LionAuthProviderId id) async {
+    // 카카오를 리다이렉트로 설정했으면 자격 획득 단계가 없다 — 코드 교환을
+    // Supabase 가 자기 REST 키로 하므로 클라이언트는 공급자로 보내기만 한다.
+    // (id_token 경로는 `aud` 가 플랫폼 앱 키라 콘솔 Client ID 와 어긋난다.)
+    if (id == LionAuthProviderId.kakao &&
+        config.kakao?.flow == KakaoAuthFlow.oauthRedirect) {
+      return signInWithOAuthRedirect(id);
+    }
+
     final provider = _providers[id];
     if (provider == null) {
       _fail('${id.name} 로그인이 설정되지 않았습니다.');
@@ -142,7 +150,9 @@ class LionAuthController extends ChangeNotifier {
       try {
         await backend.signInWithOAuthRedirect(
           id,
-          redirectTo: kIsWeb ? '${Uri.base.origin}/' : null,
+          // origin 만 쓰면 하위 경로 배포(`/fathom/`)에서 앱이 없는 자리로
+          // 돌아온다. 배포 경로를 살린 복귀 주소를 쓴다.
+          redirectTo: kIsWeb ? LionAuthConfig.webReturnUrl(Uri.base) : null,
         );
       } on LionAuthBackendException catch (e) {
         _errorMessage = e.message;
