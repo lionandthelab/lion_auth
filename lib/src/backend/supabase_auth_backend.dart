@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/lion_auth_config.dart';
@@ -216,12 +217,31 @@ class SupabaseLionAuthBackend implements LionAuthBackend {
     );
   }
 
-  String _koreanAuthMessage(AuthException e) {
+  String _koreanAuthMessage(AuthException e) => describeAuthError(e);
+
+  /// GoTrue 실패를 사용자·운영자가 읽을 수 있는 한국어로 옮긴다.
+  ///
+  /// 원문을 그대로 흘리지 않는 이유는 두 가지다. 사용자에게는 영어가 무의미하고,
+  /// **설정 실수는 사용자가 고칠 수 없는 종류**라 어디를 봐야 하는지 말해 줘야
+  /// 한다. 다만 분류하지 못한 실패는 원문을 남긴다 — 단서를 통째로 지우면
+  /// 운영이 눈을 잃는다.
+  @visibleForTesting
+  static String describeAuthError(AuthException e) {
     final code = e.code ?? '';
     final message = e.message;
     if (code == 'invalid_credentials' ||
         message.contains('Invalid login credentials')) {
       return '이메일 또는 비밀번호가 올바르지 않습니다.';
+    }
+    // id_token의 `aud`가 콘솔 Client ID와 다른 경우. 카카오처럼 플랫폼마다
+    // 앱 키가 다른 공급자에서 흔하다 — 웹은 JS 키, 앱은 네이티브 키가 aud가
+    // 되는데 콘솔에는 보통 REST API 키 하나만 넣기 때문이다.
+    if (message.contains('audience') ||
+        message.contains('Unable to validate token') ||
+        message.contains('invalid audience')) {
+      return '로그인 설정이 서버와 맞지 않습니다. '
+          '공급자 콘솔의 앱 키와 Supabase Auth의 Client ID가 같은 값인지 '
+          '확인해 주세요. (원문: $message)';
     }
     if (code == 'email_not_confirmed') {
       return '이메일 인증이 완료되지 않았습니다. 받은편지함을 확인해 주세요.';
