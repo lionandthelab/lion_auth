@@ -35,7 +35,7 @@ class AppleCredentialProvider extends SocialCredentialProvider {
       if (e.code == AuthorizationErrorCode.canceled) {
         throw const SocialSignInCancelled();
       }
-      throw SocialSignInException('Apple 로그인에 실패했습니다. (${e.code.name})', e);
+      throw SocialSignInException('Apple 로그인에 실패했습니다.', e);
     }
 
     final idToken = credential.identityToken;

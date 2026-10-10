@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/lion_auth_config.dart';
@@ -233,8 +234,17 @@ class SupabaseLionAuthBackend implements LionAuthBackend {
       return '요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.';
     }
     if (code == 'provider_disabled' || message.contains('provider is not enabled')) {
-      return '이 로그인 방식이 서버에 아직 활성화되지 않았습니다. (설정 필요: $message)';
+      return '이 로그인 방식은 아직 준비 중이에요. 다른 방법으로 로그인해 주세요.';
     }
-    return '로그인에 실패했습니다. ($message)';
+    if (code == 'unexpected_failure' || message.contains('Database error')) {
+      // 가입 트리거 등 서버 쪽 실패 — 원문(JSON)은 화면에 내지 않는다(2026-10-10 카카오).
+      return '계정을 만드는 중에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
+    }
+    if (code == 'email_exists' || message.contains('already been registered')) {
+      return '이미 다른 방법으로 가입한 이메일이에요. 처음 가입한 방법으로 로그인해 주세요.';
+    }
+    // 사용자에게는 원인 코드를 보이지 않는다 — 원문은 개발 로그로만.
+    debugPrint('[lion_auth] auth error: $code $message');
+    return '로그인하지 못했어요. 잠시 후 다시 시도해 주세요.';
   }
 }

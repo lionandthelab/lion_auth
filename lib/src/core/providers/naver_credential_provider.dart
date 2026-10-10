@@ -61,7 +61,7 @@ class NaverCredentialProvider extends SocialCredentialProvider {
       if (result.status == NaverLoginStatus.loggedOut) {
         throw const SocialSignInCancelled();
       }
-      throw SocialSignInException('네이버 로그인에 실패했습니다. ($message)');
+      throw SocialSignInException('네이버 로그인에 실패했습니다.', message);
     }
 
     final token =
