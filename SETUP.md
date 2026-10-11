@@ -15,7 +15,7 @@ LionAuthScreen (ui)                  ← 완성형 로그인/가입 화면, 테�
   └ LionAuthController (state)
       ├ SocialCredentialProvider (core)   ← 자격 획득. 백엔드와 무관
       │   ├ Google: 앱=네이티브 시트, 웹=GIS 공식 버튼
-      │   ├ Kakao : 앱=카카오톡 앱투앱, 웹=카카오계정 (OIDC id_token)
+      │   ├ Kakao : 앱=카카오계정(Safari/Custom Tabs), 웹=카카오계정 (OIDC id_token)
       │   ├ Naver : 앱=네이티브 SDK, 웹=인가코드 리다이렉트
       │   └ Apple : iOS 전용 (심사 지침 4.8 대응)
       └ LionAuthBackend (backend)         ← 세션 발급 어댑터
@@ -179,6 +179,7 @@ Naver Developers(https://developers.naver.com/apps)에 로그인해서 다음 �
      네이버 로그인 Callback URL:
        http://localhost:8080
        https://nestapp.life/
+       https://avursvhmilcsssabqtkx.supabase.co/functions/v1/naver-oauth-bridge
    - Android:
      패키지 이름: com.lionandthelab.nest
      다운로드 URL: https://nestapp.life/ (스토어 등록 전 임시)

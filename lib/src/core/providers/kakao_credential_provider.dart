@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
@@ -8,11 +7,8 @@ import '../social_credential_provider.dart';
 
 /// Kakao 자격 획득.
 ///
-/// - 앱: 카카오톡 설치 시 앱투앱 로그인, 아니면 카카오계정 로그인.
-/// - 웹: Kakao Flutter SDK의 웹 지원(카카오계정 팝업)을 그대로 사용.
-///
-/// Kakao Developers 콘솔에서 OpenID Connect를 활성화해야 id_token이 발급되며,
-/// Supabase 백엔드는 id_token 경로를 사용한다.
+/// 앱·웹 모두 공식 `loginWithKakaoAccount()`(Safari / Custom Tabs)를 쓴다.
+/// 카카오톡 앱투앱은 쓰지 않는다. OpenID Connect가 켜져 있어야 id_token이 나온다.
 class KakaoCredentialProvider extends SocialCredentialProvider {
   KakaoCredentialProvider(this.options);
 
@@ -33,19 +29,9 @@ class KakaoCredentialProvider extends SocialCredentialProvider {
   Future<SocialCredential> acquire() async {
     await ensureInitialized();
 
-    OAuthToken token;
+    late final OAuthToken token;
     try {
-      if (!kIsWeb && await isKakaoTalkInstalled()) {
-        try {
-          token = await UserApi.instance.loginWithKakaoTalk();
-        } catch (error) {
-          if (_isCancelled(error)) throw const SocialSignInCancelled();
-          // 카카오톡은 있지만 로그인 불가(미로그인 등) → 계정 로그인 폴백.
-          token = await UserApi.instance.loginWithKakaoAccount();
-        }
-      } else {
-        token = await UserApi.instance.loginWithKakaoAccount();
-      }
+      token = await UserApi.instance.loginWithKakaoAccount();
     } on SocialSignInCancelled {
       rethrow;
     } catch (error) {
@@ -53,9 +39,16 @@ class KakaoCredentialProvider extends SocialCredentialProvider {
       throw SocialSignInException('카카오 로그인에 실패했습니다.', error);
     }
 
+    final idToken = token.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw const SocialSignInException(
+        '카카오 OpenID Connect가 꺼져 있어 ID 토큰을 받지 못했습니다.',
+      );
+    }
+
     return SocialCredential(
       provider: LionAuthProviderId.kakao,
-      idToken: token.idToken,
+      idToken: idToken,
       accessToken: token.accessToken,
     );
   }

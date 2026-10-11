@@ -24,13 +24,25 @@ class GoogleCredentialProvider extends SocialCredentialProvider {
   /// 웹 GIS 버튼 로그인 결과가 흘러오는 스트림.
   Stream<SocialCredential> get credentialStream => _credentialController.stream;
 
+  /// iOS/macOS는 GIDClientID(= iosClientId)가 있어야 네이티브 시트를 켠다.
+  /// 없으면 초기화하지 않아 `No active configuration`이 나지 않게 한다.
+  bool get hasNativeClientConfig {
+    if (kIsWeb) return options.webClientId.trim().isNotEmpty;
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return (options.iosClientId ?? '').trim().isNotEmpty;
+    }
+    return options.webClientId.trim().isNotEmpty;
+  }
+
   @override
   bool get canAcquireInteractively =>
-      GoogleSignIn.instance.supportsAuthenticate();
+      hasNativeClientConfig && GoogleSignIn.instance.supportsAuthenticate();
 
   @override
   Future<void> ensureInitialized() async {
     if (_initialized) return;
+    if (!hasNativeClientConfig) return;
     _initialized = true;
 
     final signIn = GoogleSignIn.instance;
