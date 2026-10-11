@@ -239,9 +239,10 @@ class SupabaseLionAuthBackend implements LionAuthBackend {
     if (message.contains('audience') ||
         message.contains('Unable to validate token') ||
         message.contains('invalid audience')) {
-      return '로그인 설정이 서버와 맞지 않습니다. '
-          '공급자 콘솔의 앱 키와 Supabase Auth의 Client ID가 같은 값인지 '
-          '확인해 주세요. (원문: $message)';
+      // 설정 불일치는 사용자가 고칠 수 없다 — 화면에는 일반 안내, 운영 단서(공급자 콘솔
+      // 앱 키 ↔ Supabase Auth Client ID)는 로그에만 남긴다(2026-10-10 원문 비노출 원칙).
+      debugPrint('[lion_auth] 설정 불일치(콘솔 앱 키와 Supabase Client ID 확인): $message');
+      return '이 로그인 방식에 문제가 있어요. 잠시 후 다시 시도하거나 다른 방법으로 로그인해 주세요.';
     }
     if (code == 'email_not_confirmed') {
       return '이메일 인증이 완료되지 않았습니다. 받은편지함을 확인해 주세요.';

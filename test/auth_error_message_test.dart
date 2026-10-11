@@ -19,15 +19,16 @@ void main() {
     final message = messageFor(
       const AuthException('Unable to validate token: audience mismatch'),
     );
-    expect(message, contains('Client ID'),
-        reason: '어디를 고쳐야 하는지가 메시지에 없으면 영어 원문과 다를 바 없다');
-    expect(message, isNot(startsWith('로그인에 실패했습니다. (Unable')));
+    // 화면에는 원문·설정 용어를 내지 않는다(운영 단서는 debugPrint 로만).
+    expect(message, isNot(contains('Unable')));
+    expect(message, isNot(contains('audience')));
+    expect(message, contains('문제가 있어요'));
   });
 
   test('프로바이더 비활성화는 기존대로 안내한다', () {
     final message =
         messageFor(const AuthException('Unsupported provider: provider is not enabled'));
-    expect(message, contains('활성화'));
+    expect(message, contains('준비 중'));
   });
 
   test('아는 실패는 원문을 노출하지 않는다', () {
@@ -35,10 +36,10 @@ void main() {
     expect(message, '이메일 또는 비밀번호가 올바르지 않습니다.');
   });
 
-  test('모르는 실패에도 원문은 남긴다', () {
-    // 진단 단서를 통째로 지우면 운영이 눈을 잃는다. 다만 한국어 앞머리를 준다.
+  test('모르는 실패에도 원문은 화면에 내지 않는다', () {
+    // 원문은 화면에 내지 않는다 — 진단 단서는 debugPrint 로만 남는다.
     final message = messageFor(const AuthException('some novel failure'));
-    expect(message, contains('some novel failure'));
-    expect(message, startsWith('로그인에 실패했습니다.'));
+    expect(message, isNot(contains('some novel failure')));
+    expect(message, startsWith('로그인하지 못했어요.'));
   });
 }
