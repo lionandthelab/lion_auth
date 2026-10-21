@@ -27,7 +27,15 @@ class FirebasePushTokenSource implements PushTokenSource {
   bool get isSupported => platform != PushPlatform.unsupported;
 
   @override
-  Future<void> ensureInitialized() async {}
+  Future<void> ensureInitialized() async {
+    if (!kIsWeb) {
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+  }
 
   @override
   Future<bool> requestPermission() async {
@@ -46,13 +54,17 @@ class FirebasePushTokenSource implements PushTokenSource {
     if (!isSupported) return null;
     // iOS 는 APNs 토큰이 준비된 뒤에야 FCM 토큰이 발급된다.
     if (platform == PushPlatform.ios) {
-      final apns = await _messaging.getAPNSToken();
+      String? apns = await _messaging.getAPNSToken();
+      for (var i = 0; i < 4 && apns == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        apns = await _messaging.getAPNSToken();
+      }
       if (apns == null) {
         // APNs 미설정(시뮬레이터/키 누락) — 토큰 발급 불가.
         return null;
       }
     }
-    return _messaging.getToken(vapidKey: kIsWeb ? vapidKey : null);
+    return _messaging.getToken(vapidKey: kIsWeb && (vapidKey?.isNotEmpty ?? false) ? vapidKey : null);
   }
 
   @override

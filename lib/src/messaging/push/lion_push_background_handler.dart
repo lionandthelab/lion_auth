@@ -13,7 +13,13 @@ import 'package:flutter/foundation.dart';
 /// 함수를 만들어 [registerLionPushBackgroundHandler]에 넘긴다.
 @pragma('vm:entry-point')
 Future<void> lionPushBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (error) {
+    debugPrint('[LionPush] background init error: $error');
+  }
   // UI 갱신 금지 — 필요 시 로컬 저장/HTTP 만 수행.
 }
 

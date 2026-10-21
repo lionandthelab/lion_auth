@@ -12,7 +12,11 @@ import 'package:flutter/foundation.dart';
 ///   설정값을 map 으로 넘긴다.
 ///
 /// 성공하면 true, 미설정/실패면 false 를 반환한다(앱이 죽지 않고 푸시만 비활성화).
-Future<bool> initLionFirebase({Map<String, String>? webOptions}) async {
+Future<bool> initLionFirebase({
+  Map<String, String>? webOptions,
+  Map<String, String>? androidOptions,
+  Map<String, String>? iosOptions,
+}) async {
   try {
     if (Firebase.apps.isNotEmpty) return true;
     if (kIsWeb) {
@@ -20,21 +24,40 @@ Future<bool> initLionFirebase({Map<String, String>? webOptions}) async {
         return false; // 웹은 옵션 필수 — 미설정 시 조용히 비활성.
       }
       await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: webOptions['apiKey'] ?? '',
-          appId: webOptions['appId'] ?? '',
-          messagingSenderId: webOptions['messagingSenderId'] ?? '',
-          projectId: webOptions['projectId'] ?? '',
-          authDomain: webOptions['authDomain'],
-          storageBucket: webOptions['storageBucket'],
-        ),
+        options: _mapToOptions(webOptions),
       );
-    } else {
-      await Firebase.initializeApp();
+      return true;
     }
-    return true;
+
+    try {
+      await Firebase.initializeApp();
+      return true;
+    } catch (_) {
+      final fallbackMap = switch (defaultTargetPlatform) {
+        TargetPlatform.android => androidOptions,
+        TargetPlatform.iOS || TargetPlatform.macOS => iosOptions,
+        _ => null,
+      };
+      if (fallbackMap == null || (fallbackMap['apiKey'] ?? '').isEmpty) {
+        rethrow;
+      }
+      await Firebase.initializeApp(options: _mapToOptions(fallbackMap));
+      return true;
+    }
   } catch (error) {
     debugPrint('[LionPush] Firebase 초기화 실패(푸시 비활성): $error');
     return false;
   }
+}
+
+FirebaseOptions _mapToOptions(Map<String, String> map) {
+  return FirebaseOptions(
+    apiKey: map['apiKey'] ?? '',
+    appId: map['appId'] ?? '',
+    messagingSenderId: map['messagingSenderId'] ?? '',
+    projectId: map['projectId'] ?? '',
+    authDomain: map['authDomain'],
+    storageBucket: map['storageBucket'],
+    iosBundleId: map['iosBundleId'],
+  );
 }
